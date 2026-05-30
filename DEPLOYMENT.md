@@ -27,7 +27,11 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 3. In the **Environment Variables** section, add:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_ADMIN_KEY`
 4. Click **Deploy**.
+
+## 4. SPA Routing (vercel.json)
+I have added a `vercel.json` file to the root of the project. This is crucial for React apps with multiple routes. It tells Vercel to redirect all traffic to `index.html`, allowing React Router to handle the navigation properly. Without this, visiting a link like `/event/xyz` directly would result in a 404 error.
 
 ## 4. Stability Tips
 
