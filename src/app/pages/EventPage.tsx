@@ -104,25 +104,8 @@ export default function EventPage() {
     setEvent({ ...eventData, submissions });
     setIsLoading(false);
     
-    // Update dynamic SEO/Preview tags
+    // Update browser tab title
     document.title = `${eventData.name} | Group Hangout`;
-    
-    // Attempt to update meta tags for link previews (Messenger, etc.)
-    let metaTitle = document.querySelector('meta[property="og:title"]');
-    if (!metaTitle) {
-      metaTitle = document.createElement('meta');
-      metaTitle.setAttribute('property', 'og:title');
-      document.head.appendChild(metaTitle);
-    }
-    metaTitle.setAttribute('content', `${eventData.name} | Group Hangout`);
-
-    let metaDesc = document.querySelector('meta[property="og:description"]');
-    if (!metaDesc) {
-      metaDesc = document.createElement('meta');
-      metaDesc.setAttribute('property', 'og:description');
-      document.head.appendChild(metaDesc);
-    }
-    metaDesc.setAttribute('content', `Join the hangout poll for ${eventData.name} and share your availability.`);
   };
 
   const fetchSubmissions = async () => {
