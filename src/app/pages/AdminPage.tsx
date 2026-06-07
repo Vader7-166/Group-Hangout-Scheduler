@@ -7,6 +7,8 @@ import { format, isSameDay, parseISO } from "date-fns";
 import { Plus, Copy, Trash2, ExternalLink, Users, Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "../../lib/supabase";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 
 interface Submission {
   name: string;
@@ -82,26 +84,26 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
-        <Card className="w-full max-w-md border-2 border-blue-200 bg-white shadow-xl">
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-sm border-border shadow-none">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-blue-600 shadow-lg">
-              <Users className="size-8 text-white" />
+            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-primary/5">
+              <Users className="size-6 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold text-slate-900">Admin Login</CardTitle>
-            <CardDescription>Nhập mã Admin để truy cập hệ thống</CardDescription>
+            <CardTitle className="text-xl font-semibold tracking-tighter">Admin Login</CardTitle>
+            <CardDescription>Enter your admin key to continue</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAdminAuth} className="space-y-4">
               <Input
                 type="password"
-                placeholder="Nhập mã Admin..."
+                placeholder="Admin Key"
                 value={adminKeyInput}
                 onChange={(e) => setAdminKeyInput(e.target.value)}
-                className="border-slate-200 focus-visible:border-blue-500"
+                className="border-border focus-visible:ring-primary/20"
               />
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
-                Truy cập
+              <Button type="submit" className="w-full">
+                Sign In
               </Button>
             </form>
           </CardContent>
@@ -191,47 +193,39 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 p-4 md:p-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 text-center">
-          <div className="mb-4 flex justify-center">
-            <div className="rounded-full bg-blue-600 p-4 shadow-lg">
-              <Users className="size-12 text-white" />
+    <div className="min-h-screen w-full bg-background p-4 md:p-8">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-12">
+          <div className="mb-6 flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Users className="size-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tighter">Hangout Dashboard</h1>
+              <p className="text-sm text-muted-foreground">Manage your group availability polls</p>
             </div>
           </div>
-          <h1 className="mb-2 text-3xl font-bold text-slate-900 md:text-4xl">
-            Admin Dashboard
-          </h1>
-          <p className="text-muted-foreground">
-            Create and manage hangout events
-          </p>
-        </div>
+        </header>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
           {/* Left Column - Event List */}
-          <div className="space-y-6 lg:col-span-1">
-            {/* Create Event Card */}
-            <Card className="border-2 border-purple-200 bg-white shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-purple-700">
-                  <Plus className="size-5" />
-                  Create Event
-                </CardTitle>
-                <CardDescription>Start a new hangout poll</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          <aside className="space-y-8">
+            {/* Create Event */}
+            <section className="space-y-4">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">New Event</h2>
+              <div className="space-y-2">
                 <Input
                   type="text"
-                  placeholder="Event name (e.g., Weekend BBQ)"
+                  placeholder="Event name..."
                   value={newEventName}
                   onChange={(e) => setNewEventName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && createEvent()}
-                  className="border-purple-200 focus-visible:border-purple-400"
+                  className="border-border bg-transparent shadow-none"
                   disabled={isCreating}
                 />
                 <Button
                   onClick={createEvent}
-                  className="w-full bg-purple-600 hover:bg-purple-700"
+                  className="w-full"
                   disabled={!newEventName.trim() || isCreating}
                 >
                   {isCreating ? (
@@ -239,254 +233,262 @@ export default function AdminPage() {
                   ) : (
                     <Plus className="mr-2 size-4" />
                   )}
-                  Create Event
+                  Create
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </section>
 
             {/* Events List */}
-            <Card className="border-2 border-blue-200 bg-white shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-blue-700">
-                  <CalendarIcon className="size-5" />
-                  Your Events ({events.length})
-                </CardTitle>
-                <CardDescription>Click to view details</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="size-8 animate-spin text-blue-500" />
-                  </div>
-                ) : events.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">
-                    No events yet. Create one to get started!
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {events.map((event, idx) => {
-                      const colors = [
-                        "bg-blue-500",
-                        "bg-purple-500",
-                        "bg-green-500",
-                        "bg-orange-500",
-                        "bg-indigo-500",
-                      ];
-                      const color = colors[idx % colors.length];
-                      return (
-                        <div
-                          key={event.id}
-                          className={`cursor-pointer rounded-lg border-2 p-3 transition-all hover:shadow-lg ${
-                            selectedEvent?.id === event.id
-                              ? "border-purple-400 bg-purple-50 shadow-md"
-                              : "border-gray-200 bg-white hover:border-blue-300"
-                          }`}
-                          onClick={() => handleSelectEvent(event)}
-                        >
-                          <div className="mb-2 flex items-start justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className={`rounded-full ${color} p-1.5`}>
-                                <CalendarIcon className="size-3 text-white" />
-                              </div>
-                              <h3 className="font-semibold">{event.name}</h3>
-                            </div>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  copyEventLink(event.id);
-                                }}
-                                className="size-7 hover:bg-blue-100 hover:text-blue-600"
-                              >
-                                <Copy className="size-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteEvent(event.id);
-                                }}
-                                className="size-7 hover:bg-red-100 hover:text-red-600"
-                              >
-                                <Trash2 className="size-3" />
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <span>{format(parseISO(event.created_at), "MMM d, yyyy")}</span>
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Events ({events.length})
+                </h2>
+              </div>
+              
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : events.length === 0 ? (
+                <p className="py-4 text-sm text-muted-foreground">No events found.</p>
+              ) : (
+                <div className="divide-y divide-border border-y border-border">
+                  {events.map((event) => (
+                    <div
+                      key={event.id}
+                      className={`group relative py-4 transition-colors hover:bg-accent/50 ${
+                        selectedEvent?.id === event.id ? "bg-accent/30" : ""
+                      }`}
+                    >
+                      <div 
+                        className="cursor-pointer px-1"
+                        onClick={() => handleSelectEvent(event)}
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <h3 className={`text-sm font-medium ${selectedEvent?.id === event.id ? "text-primary" : "text-foreground"}`}>
+                            {event.name}
+                          </h3>
+                          <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyEventLink(event.id);
+                              }}
+                              className="size-7"
+                            >
+                              <Copy className="size-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteEvent(event.id);
+                              }}
+                              className="size-7 hover:text-destructive"
+                            >
+                              <Trash2 className="size-3" />
+                            </Button>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column - Event Details */}
-          <div className="lg:col-span-2">
-            {selectedEvent ? (
-              <div className="space-y-6">
-                {/* Event Header */}
-                <Card className="border-2 border-pink-200 bg-white shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-pink-700">
-                      <div className="rounded-full bg-pink-500 p-2">
-                        <CalendarIcon className="size-4 text-white" />
-                      </div>
-                      {selectedEvent.name}
-                    </CardTitle>
-                    <CardDescription>
-                      Share this link with participants
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex gap-2">
-                      <Input
-                        readOnly
-                        value={`${window.location.origin}/event/${selectedEvent.id}`}
-                        className="border-pink-200 font-mono text-sm"
-                      />
-                      <Button
-                        onClick={() => copyEventLink(selectedEvent.id)}
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        <Copy className="mr-2 size-4" />
-                        Copy
-                      </Button>
-                      <Button
-                        onClick={() => window.open(`/event/${selectedEvent.id}`, "_blank")}
-                        className="bg-purple-600 hover:bg-purple-700"
-                      >
-                        <ExternalLink className="size-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Group Calendar */}
-                <Card className="border-2 border-green-200 bg-white shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-green-700">
-                      <div className="rounded-full bg-green-500 p-2">
-                        <Users className="size-4 text-white" />
-                      </div>
-                      Group Availability
-                    </CardTitle>
-                    <CardDescription>
-                      {selectedEvent.submissions?.length || 0} participant
-                      {selectedEvent.submissions?.length !== 1 ? "s" : ""}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {!selectedEvent.submissions || selectedEvent.submissions.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <div className="mb-4 rounded-full bg-green-500 p-4">
-                          <Users className="size-12 text-white" />
-                        </div>
-                        <p className="text-muted-foreground">
-                          No participants yet. Share the event link to get started!
+                        <p className="mt-1 text-[10px] text-muted-foreground uppercase tracking-tight">
+                          {format(parseISO(event.created_at), "MMM d, yyyy")}
                         </p>
                       </div>
-                    ) : (
-                      <div className="space-y-6">
-                        {/* Color Legend */}
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium text-green-700">Participants</p>
-                          <div className="flex flex-wrap gap-2">
-                            {selectedEvent.submissions.map((submission, index) => {
-                              const color = PERSON_COLORS[index % PERSON_COLORS.length];
-                              return (
-                                <div
-                                  key={index}
-                                  className="flex items-center gap-2 rounded-full border bg-white px-3 py-1.5 text-sm shadow-sm"
-                                >
-                                  <div className={`size-3 rounded-full ${color.bg}`} />
-                                  <span>{submission.name}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </aside>
 
+          {/* Right Column - Event Details */}
+          <main>
+            {selectedEvent ? (
+              <div className="space-y-12">
+                {/* Event Header & Link */}
+                <section className="space-y-6">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                    <div>
+                      <h2 className="text-3xl font-bold tracking-tighter">{selectedEvent.name}</h2>
+                      <p className="text-sm text-muted-foreground mt-1">Invite participants with the link below</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => copyEventLink(selectedEvent.id)}
+                        className="h-9"
+                      >
+                        <Copy className="mr-2 size-3.5" />
+                        Copy Link
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() => window.open(`/event/${selectedEvent.id}`, "_blank")}
+                        className="h-9"
+                      >
+                        <ExternalLink className="mr-2 size-3.5" />
+                        View Live
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-2">
+                    <code className="flex-1 px-2 text-xs text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+                      {`${window.location.origin}/event/${selectedEvent.id}`}
+                    </code>
+                  </div>
+                </section>
+
+                {/* Group Calendar & Details */}
+                <section className="space-y-12">
+                  <div className="grid gap-12 lg:grid-cols-[auto_1fr]">
                         {/* Visual Calendar */}
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium text-green-700">Visual Calendar</p>
-                          <div className="flex justify-center rounded-lg border-2 border-green-200 bg-white p-2 shadow-inner">
-                            <Calendar
-                              mode="default"
-                              className="rounded-md"
-                              components={{
-                                DayContent: ({ date }) => {
-                                  const people = getPeopleForDate(date, selectedEvent);
-                                  const dayNumber = format(date, "d");
+                        <div className="space-y-4">
+                          <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Availability Map</h3>
+                          <div className="rounded-xl border bg-card p-4 shadow-sm">
+                            <TooltipProvider>
+                              <Calendar
+                                mode="default"
+                                className="p-0"
+                                components={{
+                                  DayContent: ({ date }) => {
+                                    const people = getPeopleForDate(date, selectedEvent);
+                                    const dayNumber = format(date, "d");
 
-                                  if (people.length === 0) {
-                                    return <div>{dayNumber}</div>;
-                                  }
+                                    if (people.length === 0) {
+                                      return <div className="flex size-full items-center justify-center">{dayNumber}</div>;
+                                    }
 
-                                  return (
-                                    <div className="relative size-full">
-                                      <div className="mb-1">{dayNumber}</div>
-                                      <div className="absolute bottom-0 left-1/2 flex -translate-x-1/2 gap-0.5">
-                                        {people.slice(0, 3).map((person, idx) => {
-                                          const color = PERSON_COLORS[person.colorIndex];
-                                          return (
-                                            <div
-                                              key={idx}
-                                              className={`size-1.5 rounded-full ${color.bg}`}
-                                              title={person.name}
-                                            />
-                                          );
-                                        })}
-                                        {people.length > 3 && (
-                                          <div className="size-1.5 rounded-full bg-gray-400" />
-                                        )}
-                                      </div>
-                                    </div>
-                                  );
-                                },
-                              }}
-                              modifiers={{
-                                selected: (date) => getPeopleForDate(date, selectedEvent).length > 0,
-                              }}
-                              modifiersClassNames={{
-                                selected: "bg-accent/30 font-semibold",
-                              }}
-                            />
+                                    return (
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="relative flex size-full items-center justify-center">
+                                            <span className="relative z-10">{dayNumber}</span>
+                                            <div className="absolute inset-1 rounded-sm bg-primary/5" />
+                                            <div className="absolute bottom-1 flex gap-0.5">
+                                              {people.slice(0, 4).map((person, idx) => {
+                                                const color = PERSON_COLORS[person.colorIndex];
+                                                return (
+                                                  <div
+                                                    key={idx}
+                                                    className={`size-1 rounded-full ${color.bg}`}
+                                                  />
+                                                );
+                                              })}
+                                            </div>
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p className="text-[10px] font-bold uppercase tracking-tight mb-1">{format(date, 'MMMM d')}</p>
+                                          <p className="text-xs">{people.map(p => p.name).join(', ')}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    );
+                                  },
+                                }}
+                              />
+                            </TooltipProvider>
                           </div>
                         </div>
+                    {/* Participants List */}
+                    <div className="space-y-8">
+                      {selectedEvent.submissions && selectedEvent.submissions.length > 0 && (
+                        <section className="space-y-4">
+                          <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Most Voted Days</h3>
+                          <div className="grid gap-3 sm:grid-cols-3">
+                            {(() => {
+                              const counts: Record<string, { date: Date; count: number }> = {};
+                              selectedEvent.submissions.forEach((s) => {
+                                s.dates.forEach((d) => {
+                                  const key = format(d, "yyyy-MM-dd");
+                                  if (!counts[key]) counts[key] = { date: d, count: 0 };
+                                  counts[key].count++;
+                                });
+                              });
+                              return Object.values(counts)
+                                .sort((a, b) => b.count - a.count || a.date.getTime() - b.date.getTime())
+                                .slice(0, 3)
+                                .map((item, i) => (
+                                  <Popover key={i}>
+                                    <PopoverTrigger asChild>
+                                      <button className="flex flex-col text-left w-full rounded-lg border bg-card p-3 shadow-sm transition-all hover:border-primary/50 cursor-pointer">
+                                        <div className="flex items-center justify-between mb-1 w-full">
+                                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                            Top {i + 1}
+                                          </span>
+                                          <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                                            {item.count}
+                                          </span>
+                                        </div>
+                                        <p className="text-sm font-semibold tracking-tight">
+                                          {format(item.date, "EEEE")}
+                                        </p>
+                                        <p className="text-[11px] text-muted-foreground">
+                                          {format(item.date, "MMMM d, yyyy")}
+                                        </p>
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-48 p-2" align="start">
+                                      <div className="space-y-1.5">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2 py-1 border-b">
+                                          Voted by
+                                        </p>
+                                        <div className="space-y-1 max-h-40 overflow-y-auto pt-1">
+                                          {getPeopleForDate(item.date, selectedEvent).map((person, idx) => (
+                                            <div key={idx} className="flex items-center gap-2 px-2 py-1 rounded-sm hover:bg-muted/50">
+                                              <div className={`size-1.5 rounded-full ${PERSON_COLORS[person.colorIndex].bg}`} />
+                                              <span className="text-xs font-medium">{person.name}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                ));
+                            })()}
+                          </div>
+                        </section>
+                      )}
 
-                        {/* Participants Details */}
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium text-green-700">Details</p>
-                          <div className="space-y-3">
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                            Submissions ({selectedEvent.submissions?.length || 0})
+                          </h3>
+                        </div>
+
+                        {!selectedEvent.submissions || selectedEvent.submissions.length === 0 ? (
+                          <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border text-center">
+                            <p className="text-sm text-muted-foreground">No responses yet.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
                             {selectedEvent.submissions.map((submission, index) => {
                               const color = PERSON_COLORS[index % PERSON_COLORS.length];
                               return (
                                 <div
                                   key={index}
-                                  className={`rounded-lg border-2 ${color.border} ${color.light} p-3 shadow-sm`}
+                                  className={`group rounded-lg border p-4 transition-all ${color.border} ${color.light} shadow-sm`}
                                 >
-                                  <div className="mb-2 flex items-center gap-2">
-                                    <div className={`size-3 rounded-full ${color.bg}`} />
-                                    <h3 className="font-semibold">{submission.name}</h3>
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`size-2.5 rounded-full ${color.bg}`} />
+                                      <h4 className="text-sm font-semibold">{submission.name}</h4>
+                                    </div>
+                                    <span className="text-[10px] text-muted-foreground uppercase font-medium tracking-wider">
+                                      {submission.dates.length} dates
+                                    </span>
                                   </div>
-                                  <p className="mb-2 text-sm text-muted-foreground">
-                                    Available on {submission.dates.length} date
-                                    {submission.dates.length !== 1 ? "s" : ""}
-                                  </p>
                                   <div className="flex flex-wrap gap-1.5">
                                     {submission.dates
                                       .sort((a, b) => a.getTime() - b.getTime())
                                       .map((date, dateIndex) => (
                                         <div
                                           key={dateIndex}
-                                          className={`rounded-md ${color.bg} ${color.text} px-2 py-1 text-xs font-medium`}
+                                          className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${color.bg} ${color.text}`}
                                         >
                                           {format(date, "MMM d")}
                                         </div>
@@ -496,27 +498,23 @@ export default function AdminPage() {
                               );
                             })}
                           </div>
-                        </div>
+                        )}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                    </div>
+                  </div>
+                </section>
               </div>
             ) : (
-              <Card className="h-full border-2 border-blue-200 bg-white shadow-lg">
-                <CardContent className="flex h-full min-h-[400px] items-center justify-center">
-                  <div className="text-center">
-                    <div className="mx-auto mb-4 rounded-full bg-blue-600 p-4">
-                      <CalendarIcon className="size-16 text-white" />
-                    </div>
-                    <p className="font-semibold text-blue-600">
-                      Select an event to view details
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex h-full min-h-[400px] flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/10 text-center">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-muted">
+                  <CalendarIcon className="size-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Select an event to view group availability
+                </p>
+              </div>
             )}
-          </div>
+          </main>
         </div>
       </div>
     </div>

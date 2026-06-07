@@ -9,6 +9,7 @@ import { Calendar as CalendarIcon, Users, ArrowLeft, Loader2, ChevronDown, Chevr
 import { toast } from "sonner";
 import { supabase } from "../../lib/supabase";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 
 interface Submission {
   name: string;
@@ -162,25 +163,25 @@ export default function EventPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-purple-500" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (!event) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
-        <Card className="w-full max-w-md border-2 border-red-200 bg-white shadow-xl">
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-sm border-border shadow-none">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="mb-4 rounded-full bg-red-500 p-4">
-              <CalendarIcon className="size-16 text-white" />
+            <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-destructive/10">
+              <CalendarIcon className="size-6 text-destructive" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-red-600">
-              Sự kiện này đã bị xóa
+            <h2 className="mb-2 text-xl font-semibold tracking-tighter text-destructive">
+              Event Not Found
             </h2>
-            <p className="text-muted-foreground">
-              Vui lòng liên hệ với người tổ chức để biết thêm chi tiết.
+            <p className="text-sm text-muted-foreground">
+              This hangout poll may have been removed or the link is incorrect.
             </p>
           </CardContent>
         </Card>
@@ -189,262 +190,284 @@ export default function EventPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 p-4 md:p-8">
+    <div className="min-h-screen w-full bg-background p-4 md:p-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-8 text-center">
-          <div className="mb-4 flex justify-center">
-            <div className="animate-pulse rounded-full bg-blue-600 p-4 shadow-lg">
-              <Users className="size-12 text-white" />
+        <header className="mb-12">
+          <div className="mb-6 flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <CalendarIcon className="size-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tighter">{event.name}</h1>
+              <p className="text-sm text-muted-foreground">Add your availability to the group poll</p>
             </div>
           </div>
-          <h1 className="mb-2 text-3xl font-bold text-slate-900 md:text-4xl">
-            {event.name}
-          </h1>
-          <p className="text-muted-foreground">
-            Select the dates you're available to hang out!
-          </p>
-        </div>
+        </header>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-12 lg:grid-cols-[400px_1fr]">
           {/* Input Section */}
-          <Card className="border-2 border-purple-200 bg-white shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-purple-700">
-                <div className="rounded-full bg-purple-500 p-2">
-                  <CalendarIcon className="size-4 text-white" />
-                </div>
-                Your Availability
-              </CardTitle>
-              <CardDescription>
-                Enter your name and select all dates you're free
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium text-purple-700">
-                  Your Name
-                </label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Enter your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="border-purple-200 focus-visible:border-purple-400"
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-purple-700">Select Available Dates</label>
-                <div className="flex justify-center rounded-lg border-2 border-purple-200 bg-white p-2 shadow-inner">
-                  <Calendar
-                    mode="multiple"
-                    selected={selectedDates}
-                    onSelect={(dates) => setSelectedDates(dates as Date[])}
-                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                    className="rounded-md"
+          <aside className="space-y-12">
+            <section className="space-y-6">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Your Response</h2>
+              
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label htmlFor="name" className="text-sm font-medium">
+                    Name
+                  </label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Enter your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="border-border bg-transparent shadow-none"
+                    disabled={isSubmitting}
                   />
                 </div>
-              </div>
 
-              {selectedDates.length > 0 && (
-                <div className="space-y-2 rounded-lg bg-purple-50 p-3">
-                  <p className="text-sm font-medium text-purple-700">
-                    Selected Dates ({selectedDates.length})
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedDates
-                      .sort((a, b) => a.getTime() - b.getTime())
-                      .map((date, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center gap-1 rounded-full bg-purple-600 px-3 py-1 text-sm text-white shadow-md"
-                        >
-                          <CalendarIcon className="size-3" />
-                          {format(date, "MMM d, yyyy")}
-                        </div>
-                      ))}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Select Availability</label>
+                  <div className="rounded-xl border bg-card p-4 shadow-sm">
+                    <Calendar
+                      mode="multiple"
+                      selected={selectedDates}
+                      onSelect={(dates) => setSelectedDates(dates as Date[])}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      className="p-0"
+                    />
                   </div>
                 </div>
-              )}
 
-              <Button
-                onClick={handleSubmit}
-                disabled={!name.trim() || selectedDates.length === 0 || isSubmitting}
-                className="w-full bg-purple-600 text-lg font-semibold shadow-lg hover:bg-purple-700 hover:shadow-xl"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="mr-2 size-5 animate-spin" />
-                ) : null}
-                Submit My Availability
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Group Availability Section */}
-          <Card className="border-2 border-green-200 bg-white shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-700">
-                <div className="rounded-full bg-green-500 p-2">
-                  <Users className="size-4 text-white" />
-                </div>
-                Group Availability
-              </CardTitle>
-              <CardDescription>
-                See when everyone is free
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {event.submissions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="mb-4 rounded-full bg-green-500 p-4">
-                    <Users className="size-12 text-white" />
-                  </div>
-                  <p className="text-muted-foreground">
-                    No submissions yet. Be the first to add your availability!
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {/* Color Legend */}
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-green-700">Participants</p>
-                    <div className="flex flex-wrap gap-2">
-                      {event.submissions.map((submission, index) => {
-                        const color = PERSON_COLORS[index % PERSON_COLORS.length];
-                        return (
+                {selectedDates.length > 0 && (
+                  <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Selected ({selectedDates.length})
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedDates
+                        .sort((a, b) => a.getTime() - b.getTime())
+                        .map((date, index) => (
                           <div
                             key={index}
-                            className="flex items-center gap-2 rounded-full border bg-white px-3 py-1.5 text-sm shadow-sm"
+                            className="flex items-center gap-1 rounded bg-primary px-2 py-1 text-[10px] font-medium text-primary-foreground"
                           >
-                            <div className={`size-3 rounded-full ${color.bg}`} />
-                            <span>{submission.name}</span>
+                            {format(date, "MMM d")}
                           </div>
-                        );
-                      })}
+                        ))}
                     </div>
                   </div>
+                )}
 
-                  {/* Group Calendar with Tooltips */}
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-green-700">Visual Calendar (Heatmap)</p>
-                    <div className="flex justify-center rounded-lg border-2 border-green-200 bg-white p-2 shadow-inner">
-                      <TooltipProvider>
-                        <Calendar
-                          mode="default"
-                          className="rounded-md"
-                          components={{
-                            DayContent: ({ date }) => {
-                              const people = getPeopleForDate(date);
-                              const dayNumber = format(date, "d");
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!name.trim() || selectedDates.length === 0 || isSubmitting}
+                  className="w-full"
+                >
+                  {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+                  Submit Availability
+                </Button>
+              </div>
+            </section>
+          </aside>
 
-                              if (people.length === 0) {
-                                return <div>{dayNumber}</div>;
-                              }
+          {/* Group Availability Section */}
+          <main className="space-y-12">
+            <section className="space-y-12">
+              <div className="grid gap-12 lg:grid-cols-[auto_1fr]">
+                {/* Visual Calendar */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Availability Map</h3>
+                  <div className="rounded-xl border bg-card p-4 shadow-sm">
+                    <TooltipProvider>
+                      <Calendar
+                        mode="default"
+                        className="p-0"
+                        components={{
+                          DayContent: ({ date }) => {
+                            const people = getPeopleForDate(date);
+                            const dayNumber = format(date, "d");
 
-                              // Calculate opacity based on vote count (heatmap)
-                              const maxVotes = Math.max(...event.submissions.map(() => 1), event.submissions.length);
-                              const intensity = Math.min(people.length / (maxVotes || 1), 1);
-                              
-                              return (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
+                            if (people.length === 0) {
+                              return <div className="flex size-full items-center justify-center">{dayNumber}</div>;
+                            }
+
+                            const maxVotes = event.submissions.length || 1;
+                            const intensity = people.length / maxVotes;
+                            
+                            return (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="relative flex size-full items-center justify-center">
+                                    <span className="relative z-10">{dayNumber}</span>
                                     <div 
-                                      className="relative flex size-full items-center justify-center rounded-sm"
-                                      style={{ 
-                                        backgroundColor: `rgba(34, 197, 94, ${0.1 + intensity * 0.4})`, // Green intensity
-                                        color: intensity > 0.5 ? 'white' : 'inherit'
-                                      }}
-                                    >
-                                      <div className="z-10">{dayNumber}</div>
-                                      <div className="absolute bottom-1 left-1/2 flex -translate-x-1/2 gap-0.5">
-                                        {people.slice(0, 3).map((person, idx) => {
-                                          const color = PERSON_COLORS[person.colorIndex];
-                                          return (
-                                            <div
-                                              key={idx}
-                                              className={`size-1 rounded-full ${color.bg}`}
-                                            />
-                                          );
-                                        })}
-                                      </div>
+                                      className="absolute inset-1 rounded-sm bg-primary"
+                                      style={{ opacity: 0.05 + intensity * 0.2 }}
+                                    />
+                                    <div className="absolute bottom-1 flex gap-0.5">
+                                      {people.slice(0, 4).map((person, idx) => {
+                                        const color = PERSON_COLORS[person.colorIndex];
+                                        return (
+                                          <div
+                                            key={idx}
+                                            className={`size-1 rounded-full ${color.bg}`}
+                                          />
+                                        );
+                                      })}
                                     </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="font-semibold">{format(date, 'MMM d')}</p>
-                                    <p className="text-xs">Free: {people.map(p => p.name).join(', ')}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              );
-                            },
-                          }}
-                          modifiers={{
-                            selected: (date) => getPeopleForDate(date).length > 0,
-                          }}
-                          modifiersClassNames={{
-                            selected: "bg-transparent font-semibold",
-                          }}
-                        />
-                      </TooltipProvider>
-                    </div>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-[10px] font-bold uppercase tracking-tight mb-1">{format(date, 'MMMM d')}</p>
+                                  <p className="text-xs">{people.map(p => p.name).join(', ')}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            );
+                          },
+                        }}
+                      />
+                    </TooltipProvider>
                   </div>
+                </div>
 
-                  {/* Collapsible Details */}
-                  <div className="space-y-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowDetails(!showDetails)}
-                      className="flex w-full items-center justify-between border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800"
-                    >
-                      <span className="flex items-center gap-2">
-                        <Users className="size-4" />
-                        {showDetails ? "Hide Participant Details" : "Show Participant Details"}
-                      </span>
-                      {showDetails ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-                    </Button>
-
-                    {showDetails && (
-                      <div className="mt-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                        {event.submissions.map((submission, index) => {
-                          const color = PERSON_COLORS[index % PERSON_COLORS.length];
-                          return (
-                            <div
-                              key={index}
-                              className={`rounded-lg border-2 ${color.border} ${color.light} p-3 shadow-sm`}
-                            >
-                              <div className="mb-2 flex items-start justify-between">
-                                <div className="flex items-center gap-2">
-                                  <div className={`size-3 rounded-full ${color.bg}`} />
-                                  <h3 className="font-semibold">{submission.name}</h3>
-                                </div>
-                              </div>
-                              <p className="mb-2 text-sm text-muted-foreground">
-                                Available on {submission.dates.length} date
-                                {submission.dates.length !== 1 ? "s" : ""}
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {submission.dates
-                                  .sort((a, b) => a.getTime() - b.getTime())
-                                  .map((date, dateIndex) => (
-                                    <div
-                                      key={dateIndex}
-                                      className={`rounded-md ${color.bg} ${color.text} px-2 py-1 text-xs font-medium`}
-                                    >
-                                      {format(date, "MMM d")}
+                {/* Participants Details */}
+                <div className="space-y-12">
+                  {event.submissions.length > 0 && (
+                    <section className="space-y-4">
+                      <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Most Voted Days</h3>
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        {(() => {
+                          const counts: Record<string, { date: Date; count: number }> = {};
+                          event.submissions.forEach((s) => {
+                            s.dates.forEach((d) => {
+                              const key = format(d, "yyyy-MM-dd");
+                              if (!counts[key]) counts[key] = { date: d, count: 0 };
+                              counts[key].count++;
+                            });
+                          });
+                          return Object.values(counts)
+                            .sort((a, b) => b.count - a.count || a.date.getTime() - b.date.getTime())
+                            .slice(0, 3)
+                            .map((item, i) => (
+                              <Popover key={i}>
+                                <PopoverTrigger asChild>
+                                  <button className="flex flex-col text-left w-full rounded-lg border bg-card p-3 shadow-sm transition-all hover:border-primary/50 cursor-pointer">
+                                    <div className="flex items-center justify-between mb-1 w-full">
+                                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                        Top {i + 1}
+                                      </span>
+                                      <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                                        {item.count}
+                                      </span>
                                     </div>
-                                  ))}
+                                    <p className="text-sm font-semibold tracking-tight">
+                                      {format(item.date, "EEEE")}
+                                    </p>
+                                    <p className="text-[11px] text-muted-foreground">
+                                      {format(item.date, "MMMM d, yyyy")}
+                                    </p>
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-48 p-2" align="start">
+                                  <div className="space-y-1.5">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2 py-1 border-b">
+                                      Voted by
+                                    </p>
+                                    <div className="space-y-1 max-h-40 overflow-y-auto pt-1">
+                                      {getPeopleForDate(item.date).map((person, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 px-2 py-1 rounded-sm hover:bg-muted/50">
+                                          <div className={`size-1.5 rounded-full ${PERSON_COLORS[person.colorIndex].bg}`} />
+                                          <span className="text-xs font-medium">{person.name}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            ));
+                        })()}
+                      </div>
+                    </section>
+                  )}
+
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                        Submissions ({event.submissions.length})
+                      </h3>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setShowDetails(!showDetails)}
+                        className="h-7 text-[10px] uppercase tracking-widest"
+                      >
+                        {showDetails ? "Hide Details" : "Show Details"}
+                      </Button>
+                    </div>
+
+                    {event.submissions.length === 0 ? (
+                      <div className="flex h-32 items-center justify-center rounded-lg border border-dashed text-center">
+                        <p className="text-sm text-muted-foreground">No responses yet.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2">
+                          {event.submissions.map((submission, index) => {
+                            const color = PERSON_COLORS[index % PERSON_COLORS.length];
+                            return (
+                              <div
+                                key={index}
+                                className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${color.border} ${color.light}`}
+                              >
+                                <div className={`size-2 rounded-full ${color.bg}`} />
+                                <span className="font-semibold">{submission.name}</span>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
+
+                        {showDetails && (
+                          <div className="mt-6 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                            {event.submissions.map((submission, index) => {
+                              const color = PERSON_COLORS[index % PERSON_COLORS.length];
+                              return (
+                                <div
+                                  key={index}
+                                  className={`rounded-lg border p-4 shadow-none ${color.border} ${color.light}`}
+                                >
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`size-2.5 rounded-full ${color.bg}`} />
+                                      <h4 className="text-sm font-semibold">{submission.name}</h4>
+                                    </div>
+                                    <span className="text-[10px] text-muted-foreground uppercase font-medium tracking-wider">
+                                      {submission.dates.length} dates
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {submission.dates
+                                      .sort((a, b) => a.getTime() - b.getTime())
+                                      .map((date, dateIndex) => (
+                                        <div
+                                          key={dateIndex}
+                                          className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${color.bg} ${color.text}`}
+                                        >
+                                          {format(date, "MMM d")}
+                                        </div>
+                                      ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            </section>
+          </main>
         </div>
       </div>
     </div>
